@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <regex>
 #include "avl_tree.h"
 #include "doubly_linked_list.h"
 
@@ -15,6 +16,7 @@ int main(int argc, char** argv) {
 	using std::endl;
 	using std::ifstream;
 	using std::pair;
+	using std::regex;
 	using std::string;
 
 	/* Convert char* array into string list */
@@ -30,11 +32,14 @@ int main(int argc, char** argv) {
 		auto filename = path.substr(last_slash + 1,
 				last_dot - (last_slash + 1));
 
-		ifstream file(path);
+		ifstream file { path };
+		regex filter { "([\\w-]+)" };
 		if (file.is_open()) {
 			string word;
-			while(file >> word) {
-				cout << word << '\t';
+			std::smatch match;
+			while (file >> word) {
+				std::regex_search(word, match, filter);
+				cout << word << match[0] << endl;
 				word.clear();
 			}
 		}

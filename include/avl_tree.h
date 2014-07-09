@@ -210,7 +210,7 @@ public:
 	}
 
 	avl_tree(const self& other) {
-		_root = recursive_copy(other.root);
+		_root = recursive_copy(other._root);
 	}
 
 	~avl_tree() {
