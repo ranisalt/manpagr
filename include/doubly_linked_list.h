@@ -121,6 +121,17 @@ public:
 		return p->_item;
 	}
 
+	bool has(const T& item) const {
+		node* aux = _front;
+		while (aux != nullptr) {
+			if (aux->_item == item) {
+				return true;
+			}
+			aux = aux->_succ;
+		}
+		return false;
+	}
+
 	T back() const {
 		empty_check();
 
@@ -160,7 +171,7 @@ public:
 		}
 
 		/**< Hold node, advance it and then delete the old one */
-		T value{p->_item};
+		T value { p->_item };
 		p->_pred->_succ = p->_succ;
 		p->_succ->_pred = p->_pred;
 		delete p;
@@ -173,7 +184,7 @@ public:
 		empty_check();
 
 		node* aux = _back;
-		T item{_back->_item};
+		T item { _back->_item };
 		_back = _back->_pred;
 		if (_back == nullptr) {
 			_front = nullptr;
@@ -205,18 +216,18 @@ public:
 	}
 
 	/**< Insertion operations */
-	void push(size_type position, const T& item) {
+	self& push(size_type position, const T& item) {
 		if (position < 0 || position > this->_size)
 			throw std::out_of_range("Out of range access.");
 
 		if (position == 0) {
 			push_front(item);
-			return;
+			return *this;
 		}
 
 		if (position == this->_size) {
 			push_back(item);
-			return;
+			return *this;
 		}
 
 		node* p;
@@ -231,24 +242,27 @@ public:
 		}
 		p->_pred = p->_pred->_succ = new node(p->_pred, p, item);
 		++this->_size;
+		return *this;
 	}
 
-	void push_back(const T& item) {
+	self& push_back(const T& item) {
 		if (!_size) {
 			_front = _back = new node(nullptr, nullptr, item);
 		} else {
 			_back = _back->_succ = new node(_back, nullptr, item);
 		}
 		++this->_size;
+		return *this;
 	}
 
-	void push_front(const T& item) {
+	self& push_front(const T& item) {
 		if (!_size) {
 			_front = _back = new node(nullptr, nullptr, item);
 		} else {
 			_front = _front->_pred = new node(nullptr, _front, item);
 		}
 		++this->_size;
+		return *this;
 	}
 
 	using iterator = iterator_base<T>;

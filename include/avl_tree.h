@@ -4,15 +4,16 @@
 #include <algorithm>
 #include <list>
 #include <stdexcept>
+#include "doubly_linked_list.h"
 
-template<typename T>
+template<typename T, template<typename > class Container = doubly_linked_list>
 class avl_tree {
 	using size_type = std::size_t;
 
 private:
 	struct node {
 		node(const T& item) :
-		_height(1), _left(nullptr), _right(nullptr), _item(item) {
+				_height(1), _left(nullptr), _right(nullptr), _item(item) {
 		}
 
 		size_type _height;
@@ -21,19 +22,22 @@ private:
 		T _item;
 	};
 
-	bool has(node* root, const T& item) const {
-		if (root == nullptr)
-		return false;
-		if (root->_item > item)
-		return has(root->_left, item);
-		if (root->_item < item)
-		return has(root->_right, item);
-		return true;
+	T& find(node* root, const T& item) {
+		if (root != nullptr) {
+			if (root->_item > item)
+				return find(root->_left, item);
+			if (root->_item < item)
+				return find(root->_right, item);
+			else {
+				return root->_item;
+			}
+		}
+		throw std::range_error("Item not found on the tree.");
 	}
 
 	size_type factor(node* root) const {
 		return (root == nullptr) ?
-		0 : height(root->_left) - height(root->_right);
+				0 : height(root->_left) - height(root->_right);
 	}
 
 	size_type height(node* root) const {
@@ -43,7 +47,7 @@ private:
 	node* insert(node* root, const T& item) {
 		// If we find a null root, we found the right spot.
 		if (root == nullptr)
-		return root = new node(item);
+			return root = new node(item);
 
 		// If root's value is greater than inserted value, try to insert to the left.
 		else if (root->_item > item) {
@@ -54,10 +58,10 @@ private:
 
 				// If the factor of the left node is -1, we have a left-right case.
 				if (factor(root->_left) == -1)
-				rotate_left(root->_left);
+					root->_left = rotate_left(root->_left);
 
 				// The tree is now guaranteedly a left-left case.
-				rotate_right(root);
+				root = rotate_right(root);
 			}
 		}
 
@@ -70,58 +74,62 @@ private:
 
 				// If the factor of the right node is 1, we have a right-left case.
 				if (factor(root->_right) == 1)
-				rotate_right(root->_right);
+					root->_right = rotate_right(root->_right);
 
 				// The tree is now guaranteedly a right-right case.
-				rotate_left(root);
+				root = rotate_left(root);
 			}
 
 			// If root's value is equal to inserted value, we have an exception.
 			// TODO: find a better exception to throw.
 		} else
-		throw std::exception();
+			throw std::exception();
 
 		// Recalculate the node height according to the insertion.
 		root->_height = std::max(height(root->_left), height(root->_right)) + 1;
 		return root;
 	}
 
-	void rotate_left(node*& root) {
+	node* rotate_left(node* root) {
 		node* aux;
 		aux = root->_right;
 		root->_right = aux->_left;
 		aux->_left = root;
-		root = aux;
+		root->_height = std::max(height(root->_left), height(root->_right)) + 1;
+		aux->_height = std::max(height(aux->_left), height(root)) + 1;
+		return aux;
 	}
 
-	void rotate_right(node*& root) {
+	node* rotate_right(node* root) {
 		node* aux;
 		aux = root->_left;
 		root->_left = aux->_right;
 		aux->_right = root;
-		root = aux;
+		root->_height = std::max(height(root->_left), height(root->_right)) + 1;
+		aux->_height = std::max(height(aux->_left), height(root)) + 1;
+		return aux;
 	}
 
 	node* remove(node* root, const T& item) {
 		// If we find a nullptr, the item does not exist in this tree.
 		if (root == nullptr)
-		throw std::exception();
+			throw std::exception();
 
 		// The same of insertion works here. Find where the item must be, rebalance if needed.
 		else if (root->_item > item) {
 			root->_left = remove(root->_left, item);
 			if (factor(root) == 2) {
 				if (factor(root->_left) == -1)
-				rotate_left(root->_left);
-				rotate_right(root);
+					root = rotate_left(root->_left);
+				root = rotate_right(root);
 			}
 		} else if (root->_item < item) {
 			root->_right = remove(root->_right, item);
 
 			if (factor(root) == -2) {
 				if (factor(root->_right) == 1)
-				rotate_right(root->_right);
-				rotate_left(root);
+					root = rotate_right(root->_right);
+				root = rotate_left(root);
 			}
 		}
 
@@ -151,7 +159,7 @@ private:
 			// If there are both children, find the immediately next value, swap and retry to remove.
 			node* aux = root->_right;
 			while (aux->_left != nullptr)
-			aux = aux->_left;
+				aux = aux->_left;
 			std::swap(root->_item, aux->_item);
 			root->_right = remove(root->_right, item);
 		}
@@ -161,7 +169,7 @@ private:
 		return root;
 	}
 
-	/*void in_order(node* root, Container<T>& container) const {
+	void in_order(node* root, Container<T>& container) const {
 		if (root != nullptr) {
 			in_order(root->_left, container);
 			container.push_back(root->_item);
@@ -183,7 +191,7 @@ private:
 			post_order(root->_right, container);
 			container.push_back(root->_item);
 		}
-	}*/
+	}
 
 	node* recursive_copy(node* other_root) {
 		// To recursively copy, create a new node, recursively copy it's left and right child, then return it to be attached.
@@ -206,7 +214,7 @@ private:
 
 public:
 	avl_tree() :
-	_size(0), _root(nullptr) {
+			_size(0), _root(nullptr) {
 	}
 
 	avl_tree(const self& other) {
@@ -217,8 +225,21 @@ public:
 		recursive_delete(_root);
 	}
 
-	bool has(const T& item) const {
-		return has(_root, item);
+	T& find(const T& item) {
+		return find(_root, item);
+	}
+
+	bool has(const T& item) {
+		try {
+			find(_root, item);
+			return true;
+		} catch (std::exception& e) {
+			return false;
+		}
+	}
+
+	size_type height() const {
+		return height(_root);
 	}
 
 	size_type size() const {
@@ -235,7 +256,7 @@ public:
 		--_size;
 	}
 
-	/*Container<T> in_order() const {
+	Container<T> in_order() const {
 		Container<T> container;
 		in_order(_root, container);
 		return container;
@@ -251,7 +272,38 @@ public:
 		Container<T> container;
 		post_order(_root, container);
 		return container;
-	}*/
+	}
+
+	T** to_array() const {
+		size_type _length = 1 << (height(_root) - 1);
+		node** nodes = new node*[_length];
+		T** items = new T*[_length];
+
+		if (_size) {
+			nodes[0] = _root;
+			items[0] = new T(_root->_item);
+			for (size_type i = 0, pos = 0; i < _length >> 1; ++i) {
+				++pos;
+				if (nodes[i] != nullptr) {
+					nodes[pos] = nodes[i]->_left;
+					items[pos] = new T(nodes[i]->_item);
+					++pos;
+					nodes[pos] = nodes[i]->_right;
+					items[pos] = new T(nodes[i]->_item);
+				} else {
+					nodes[pos] = nullptr;
+					items[pos] = nullptr;
+					++pos;
+					nodes[pos] = nullptr;
+					items[pos] = nullptr;
+
+				}
+			}
+		}
+		delete[] nodes;
+
+		return items;
+	}
 
 private:
 	size_type _size;
