@@ -28,6 +28,14 @@ bool operator<(const record& lhs, const record& rhs) {
 	return lhs.first < rhs.first;
 }
 
+std::ostream& operator<<(std::ostream& lhs, const record& rhs) {
+	lhs << rhs.first;
+	for (auto i : rhs.second) {
+		lhs << 0xC << i;
+	}
+	return lhs << 0xB;
+}
+
 doubly_linked_list<string> connectives() {
 	doubly_linked_list<string> connectives;
 
@@ -206,7 +214,16 @@ int main(int argc, char** argv) {
 				output << *arr[i] << 0xB;
 			}
 		}
+		output << 0x9;
+		auto sec = index.to_array();
+		for (std::size_t i = 0, limit = 1 << (index.height() - 1); i < limit;
+				++i) {
+			if (sec[i] != nullptr) {
+				output << *sec[i] << 0xB;
+			}
+		}
 		output.close();
+
 	}
 	cout << endl;
 }
