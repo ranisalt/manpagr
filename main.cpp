@@ -142,24 +142,26 @@ doubly_linked_list<string> connectives() {
 	return connectives;
 }
 
-doubly_linked_list<string> purify(string word) {
-	doubly_linked_list<string> list;
-	string piece;
-	for (auto chr : word) {
-		// in order: numbers, uppercase, lowercase, accented
-		if ((chr >= 0x30 && chr <= 0x39) || (chr >= 0x41 && chr <= 0x5A)
-				|| (chr >= 0x61 && chr <= 0x7A)
-				|| (chr >= 0x80 && chr <= 0xA7)) {
-			piece.append(&chr, 1);
-		} else if (!piece.empty()) {
-			list.push_back(piece);
-			piece.clear();
+bool is_valid_char(unsigned char chr) {
+	return (chr >= 0x30 && chr <= 0x39)
+			|| (chr >= 0x41 && chr <= 0x5A)
+			|| (chr >= 0x61 && chr <= 0x7A)
+			|| (chr >= 0x80 && chr <= 0xA7);
+}
+
+string purify(string word) {
+	string::iterator str_begin = word.begin(), str_end = word.end();
+	for (; str_begin != str_end; ++str_begin) {
+		if (is_valid_char(*str_begin)) {
+			break;
 		}
 	}
-	if (!piece.empty()) {
-		list.push_back(piece);
+	for (; str_end != str_begin; --str_end) {
+		if (is_valid_char(*(str_end - 1))) {
+			break;
+		}
 	}
-	return list;
+	return { str_begin, str_end };
 }
 
 int main(int argc, char** argv) {
@@ -171,13 +173,15 @@ int main(int argc, char** argv) {
 
 	auto filter = connectives();
 	avl_tree<manpage> primary;
-	avl_tree<record> index;
+	avl_tree<record> secondary;
+	
 	for (int i = 1; i < argc; ++i) {
 		string path { argv[i] };
-		auto last_slash = path.find_last_of('/'), last_dot = path.find_last_of(
-				'.');
-		auto filename = path.substr(last_slash + 1,
-				last_dot - (last_slash + 1));
+		
+		auto last_slash = path.find_last_of('/'),
+		     last_dot   = path.find_last_of('.');
+		
+		auto filename = path.substr(last_slash + 1,	last_dot - (last_slash + 1));
 
 		ifstream file { path };
 		if (file.is_open()) {
@@ -186,41 +190,33 @@ int main(int argc, char** argv) {
 
 			string word;
 			while (text >> word) {
-				auto words = purify(word);
-				for (auto purified : words) {
-					if (!filter.has(purified)) {
-						try {
-							index.find( { purified, { } }).second.push_back(
-									filename);
-						} catch (std::range_error& e) {
-							doubly_linked_list<std::string> newlist;
-							newlist.push_back(filename);
-							index.insert( { purified, newlist });
-						}
+				auto purified = purify(word);
+				if (!filter.has(purified)) {
+					try {
+						secondary.find({ purified, {} }).second.push_back(
+							filename);
+					} catch (std::range_error& e) {
+						doubly_linked_list<std::string> newlist;
+						newlist.push_back(filename);
+						secondary.insert({ purified, newlist });
 					}
 				}
 				word.clear();
 			}
-			primary.insert( { filename, text.str() });
+			primary.insert({ filename, text.str() });
 			file.close();
 		}
 	}
 	ofstream output { "manpages.dat" };
 	if (output.is_open()) {
-		auto arr = primary.to_array();
-		for (std::size_t i = 0, limit = 1 << (primary.height() - 1); i < limit;
-				++i) {
-			if (arr[i] != nullptr) {
-				output << *arr[i] << 0xB;
-			}
+		auto pri = primary.breadth_first();
+		for (auto it : pri) {
+			output << it << 0xB;
 		}
 		output << 0x9;
-		auto sec = index.to_array();
-		for (std::size_t i = 0, limit = 1 << (index.height() - 1); i < limit;
-				++i) {
-			if (sec[i] != nullptr) {
-				output << *sec[i] << 0xB;
-			}
+		auto sec = secondary.breadth_first();
+		for (auto it : sec) {
+			output << it << 0xB;
 		}
 		output.close();
 

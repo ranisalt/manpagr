@@ -35,7 +35,7 @@ private:
 		throw std::range_error("Item not found on the tree.");
 	}
 
-	size_type factor(node* root) const {
+	int factor(node* root) const {
 		return (root == nullptr) ?
 				0 : height(root->_left) - height(root->_right);
 	}
@@ -96,7 +96,7 @@ private:
 		root->_right = aux->_left;
 		aux->_left = root;
 		root->_height = std::max(height(root->_left), height(root->_right)) + 1;
-		aux->_height = std::max(height(aux->_left), height(root)) + 1;
+		aux->_height = std::max(height(aux->_left), height(aux->_right)) + 1;
 		return aux;
 	}
 
@@ -106,7 +106,7 @@ private:
 		root->_left = aux->_right;
 		aux->_right = root;
 		root->_height = std::max(height(root->_left), height(root->_right)) + 1;
-		aux->_height = std::max(height(aux->_left), height(root)) + 1;
+		aux->_height = std::max(height(aux->_left), height(aux->_right)) + 1;
 		return aux;
 	}
 
@@ -273,37 +273,59 @@ public:
 		post_order(_root, container);
 		return container;
 	}
-
-	T** to_array() const {
-		size_type _length = 1 << (height(_root) - 1);
-		node** nodes = new node*[_length];
-		T** items = new T*[_length];
-
-		if (_size) {
-			nodes[0] = _root;
-			items[0] = new T(_root->_item);
-			for (size_type i = 0, pos = 0; i < _length >> 1; ++i) {
-				++pos;
-				if (nodes[i] != nullptr) {
-					nodes[pos] = nodes[i]->_left;
-					items[pos] = new T(nodes[i]->_item);
-					++pos;
-					nodes[pos] = nodes[i]->_right;
-					items[pos] = new T(nodes[i]->_item);
-				} else {
-					nodes[pos] = nullptr;
-					items[pos] = nullptr;
-					++pos;
-					nodes[pos] = nullptr;
-					items[pos] = nullptr;
-
+	
+	Container<T> breadth_first() const {
+		Container<node*> nodes;
+		Container<T> items;
+		if (_root != nullptr) {
+			nodes.push_back(_root);
+			
+			for (auto node : nodes) {
+				if (node->_left != nullptr) {
+					nodes.push_back(node->_left);
 				}
+				if (node->_right != nullptr) {
+					nodes.push_back(node->_right);
+				}
+				items.push_back(node->_item);
 			}
 		}
-		delete[] nodes;
-
 		return items;
 	}
+
+/*	T** to_array() const {
+		T** items = nullptr;
+		if (_root != nullptr) {
+			size_type _length = 1 << (height(_root) - 1);
+			node** nodes = new node*[_length];
+			items = new T*[_length];
+
+			if (_size) {
+				nodes[0] = _root;
+				items[0] = new T(_root->_item);
+				for (size_type i = 0, pos = 0; i < _length >> 1; ++i) {
+					++pos;
+					if (nodes[i] != nullptr) {
+						nodes[pos] = nodes[i]->_left;
+						items[pos] = new T(nodes[i]->_item);
+						++pos;
+						nodes[pos] = nodes[i]->_right;
+						items[pos] = new T(nodes[i]->_item);
+					} else {
+						nodes[pos] = nullptr;
+						items[pos] = nullptr;
+						++pos;
+						nodes[pos] = nullptr;
+						items[pos] = nullptr;
+
+					}
+				}
+			}
+			delete[] nodes;
+		}
+		return items;
+	}
+	*/
 
 private:
 	size_type _size;

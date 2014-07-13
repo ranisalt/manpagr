@@ -1,4 +1,4 @@
-CXX=g++
+CXX=clang++
 
 INCLUDE=-Iinclude
 CXXFLAGS=-g -Wall -std=c++11 $(INCLUDE)
