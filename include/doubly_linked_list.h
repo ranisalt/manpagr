@@ -264,6 +264,20 @@ public:
 		++this->_size;
 		return *this;
 	}
+	
+	self& intersect(const self& other) {
+		self intersection;
+		for (auto it : *this) {
+			for (auto that : other) {
+				if (it == that) {
+					intersection.push_back(it);
+					break;
+				}
+			}
+		}
+		std::swap(*this, intersection);
+		return *this;
+	}
 
 	using iterator = iterator_base<T>;
 
