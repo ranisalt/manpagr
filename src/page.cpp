@@ -1,21 +1,16 @@
-/*
- * page.cpp
- *
- *  Created on: 9 Jul 2014
- *      Author: ranieri
- */
-
+#include <string>
 #include "page.h"
 
-namespace manpager {
+page::page(std::string title, std::string content) : _title(title), _content(content) {}
 
-page::page() {
-	// TODO Auto-generated constructor stub
-
+std::string page::title() const {
+	return _title;
 }
 
-page::~page() {
-	// TODO Auto-generated destructor stub
+std::string page::content() const {
+	return _content;
 }
 
-} /* namespace manpager */
+bool page::operator<(const page& rhs) const {
+	return _title < rhs._title;
+}

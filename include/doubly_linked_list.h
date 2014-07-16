@@ -122,12 +122,9 @@ public:
 	}
 
 	bool has(const T& item) const {
-		node* aux = _front;
-		while (aux != nullptr) {
-			if (aux->_item == item) {
+		for (auto it : *this) {
+			if (it == item)
 				return true;
-			}
-			aux = aux->_succ;
 		}
 		return false;
 	}

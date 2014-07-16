@@ -1,22 +1,19 @@
 CXX=clang++
 
 INCLUDE=-Iinclude
-CXXFLAGS=-g -Wall -std=c++11 $(INCLUDE)
+CXXFLAGS=-Wall -std=c++11 $(INCLUDE)
 
 EXEC=manpagr
-TEST=$(EXEC)_test
+EXEC_GEN=manpagr-gen
 
-SRC=$(shell find src -iname '*.cpp') main.cpp
-SRC_TEST=$(shell find src tests -iname '*.cpp') main_test.cpp
+SRC=$(shell find src search -iname '*.cpp')
+SRC_GEN=$(shell find src gen -iname '*.cpp')
 
 all:: build
 
 build::
+	$(CXX) -o $(EXEC_GEN) $(SRC_GEN) $(CXXFLAGS)
 	$(CXX) -o $(EXEC) $(SRC) $(CXXFLAGS)
 
-test::
-	$(CXX) -o $(TEST) $(SRC_TEST) $(CXXFLAGS) -lgtest -pthread
-	@./$(TEST)
-
 clean::
-	@$(RM) -rf $(EXEC) $(TEST)
+	@$(RM) -rf $(EXEC) $(EXEC_GEN)

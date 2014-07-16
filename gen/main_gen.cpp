@@ -1,40 +1,13 @@
-/*
- * main.cpp
- *
- *  Created on: 9 Jul 2014
- *      Author: ranieri
- */
-
-#include <iostream>
+#include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include "avl_tree.h"
 #include "doubly_linked_list.h"
-
-using std::pair;
+#include "manpageio.h"
+#include "page.h"
+#include "word.h"
 using std::string;
-using manpage = std::pair<string, string>;
-using record = std::pair<string, doubly_linked_list<string>>;
-
-bool operator<(const manpage& lhs, const manpage& rhs) {
-	return lhs.first < rhs.first;
-}
-
-std::ostream& operator<<(std::ostream& lhs, const manpage& rhs) {
-	return lhs << rhs.first << 0xB << rhs.second;
-}
-
-bool operator<(const record& lhs, const record& rhs) {
-	return lhs.first < rhs.first;
-}
-
-std::ostream& operator<<(std::ostream& lhs, const record& rhs) {
-	lhs << rhs.first;
-	for (auto i : rhs.second) {
-		lhs << 0xC << i;
-	}
-	return lhs << 0xB;
-}
 
 doubly_linked_list<string> connectives() {
 	doubly_linked_list<string> connectives;
@@ -161,65 +134,51 @@ string purify(string word) {
 			break;
 		}
 	}
+	std::transform(str_begin, str_end, str_begin, ::tolower);
 	return { str_begin, str_end };
 }
 
 int main(int argc, char** argv) {
 	using std::cout;
 	using std::endl;
-	using std::ifstream;
+	using std::max;
 	using std::ofstream;
+	using std::size_t;
 	using std::stringstream;
 
-	auto filter = connectives();
-	avl_tree<manpage> primary;
-	avl_tree<record> secondary;
+	auto you_shall_not_pass = connectives();
+	avl_tree<page> primary;
+	avl_tree<word> secondary;
+
+	ManpageIO io;
 	
 	for (int i = 1; i < argc; ++i) {
-		string path { argv[i] };
+		string path{ argv[i] };
 		
-		auto last_slash = path.find_last_of('/'),
-		     last_dot   = path.find_last_of('.');
+		auto p = io.read({ path });
+		primary.insert(p);
 		
-		auto filename = path.substr(last_slash + 1,	last_dot - (last_slash + 1));
-
-		ifstream file { path };
-		if (file.is_open()) {
-			stringstream text;
-			text << file.rdbuf();
-
-			string word;
-			while (text >> word) {
-				auto purified = purify(word);
-				if (!filter.has(purified)) {
-					try {
-						secondary.find({ purified, {} }).second.push_back(
-							filename);
-					} catch (std::range_error& e) {
-						doubly_linked_list<std::string> newlist;
-						newlist.push_back(filename);
-						secondary.insert({ purified, newlist });
-					}
+		string str;
+		
+		stringstream ss { p.content() };
+		while (ss >> str) {
+			auto purified = purify(str);
+			if (!you_shall_not_pass.has(purified)) {
+				try {
+					secondary.find({ purified }).pages(p.title());
+				} catch (std::range_error& e) {
+					word w { purified };
+					w.pages(p.title());
+					secondary.insert(w);
 				}
-				word.clear();
 			}
-			primary.insert({ filename, text.str() });
-			file.close();
+			str.clear();
 		}
 	}
-	ofstream output { "manpages.dat" };
-	if (output.is_open()) {
-		auto pri = primary.breadth_first();
-		for (auto it : pri) {
-			output << it << 0xB;
-		}
-		output << 0x9;
-		auto sec = secondary.breadth_first();
-		for (auto it : sec) {
-			output << it << 0xB;
-		}
-		output.close();
-
-	}
-	cout << endl;
+	
+	io.write_primary_record({ "manpages.dat" }, primary);
+	io.write_secondary_record({ "manwords.dat" }, secondary);
+	
+	//system("sl");
+	return 0;
 }

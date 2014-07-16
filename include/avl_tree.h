@@ -24,7 +24,7 @@ private:
 
 	T& find(node* root, const T& item) {
 		if (root != nullptr) {
-			if (root->_item > item)
+			if (item < root->_item)
 				return find(root->_left, item);
 			if (root->_item < item)
 				return find(root->_right, item);
@@ -50,7 +50,7 @@ private:
 			return root = new node(item);
 
 		// If root's value is greater than inserted value, try to insert to the left.
-		else if (root->_item > item) {
+		else if (item < root->_item) {
 			root->_left = insert(root->_left, item);
 
 			// If the factor of root unbalancing is 2, we have a left-left or left-right case.
@@ -116,7 +116,7 @@ private:
 			throw std::exception();
 
 		// The same of insertion works here. Find where the item must be, rebalance if needed.
-		else if (root->_item > item) {
+		else if (item < root->_item) {
 			root->_left = remove(root->_left, item);
 			if (factor(root) == 2) {
 				if (factor(root->_left) == -1)

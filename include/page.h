@@ -1,21 +1,20 @@
-/*
- * page.h
- *
- *  Created on: 9 Jul 2014
- *      Author: ranieri
- */
-
 #ifndef PAGE_H_
 #define PAGE_H_
 
-namespace manpager {
+#include <string>
 
 class page {
 public:
-	page();
-	virtual ~page();
+	page(std::string title, std::string content);
+	
+	std::string title() const;
+	std::string content() const;
+	
+	bool operator<(const page& rhs) const;
+	
+private:
+	std::string _title;
+	std::string _content;
 };
 
-} /* namespace manpager */
-
-#endif /* PAGE_H_ */
+#endif
